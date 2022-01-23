@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { getFirestore } from 'firebase-admin/firestore'
+import { groupBy, pick } from 'lodash'
 import { NextApiHandler } from 'next'
 import { parse } from 'node-html-parser'
 import { CAMBRIDGE_DICTIONARY_ORIGIN } from '../../../../internal/configs'
@@ -10,21 +11,50 @@ initializeDefaultApp()
 const db = getFirestore()
 db.settings({ ignoreUndefinedProperties: true })
 
+interface SenseRaw {
+  pronounce: string
+  partOfSpeech: string
+  translated: string
+  example: string
+  translatedExample: string
+}
+interface SenseResponse {
+  translated: string
+  example: string
+  translatedExample: string
+}
+interface VocabularyResponse {
+  [index: number]: {
+    partOfSpeech: string
+    pronounce: string
+    senses: SenseResponse[]
+  }
+}
+
+const groupPartOfSpeech = (senses: SenseRaw[]): VocabularyResponse =>
+  Object.values(groupBy(senses, 'partOfSpeech')).map((groupedSenses) => ({
+    pronounce: groupedSenses[0].pronounce,
+    partOfSpeech: groupedSenses[0].partOfSpeech,
+    senses: groupedSenses.map((sense) =>
+      pick(sense, ['translated', 'example', 'translatedExample'])
+    ),
+  }))
+
 const handler: NextApiHandler = async (req, res) => {
   const {
     query: { vocabulary },
   } = req
 
   const vocabularyQuerySnapshot = await db
-    .collection('vocabularies')
+    .collection('vocabularies-vocabularies')
     .where('value', '==', vocabulary)
     .get()
 
   if (!vocabularyQuerySnapshot.empty) {
     console.log('Cache hit of vocabulary', vocabulary)
-    res
-      .status(200)
-      .json({ data: vocabularyQuerySnapshot.docs[0].data().senses })
+    res.status(200).json({
+      data: groupPartOfSpeech(vocabularyQuerySnapshot.docs[0].data().senses),
+    })
     return
   }
 
@@ -54,13 +84,13 @@ const handler: NextApiHandler = async (req, res) => {
     example: wrapper.querySelector('.examp > .deg')?.innerText,
     translatedExample: wrapper.querySelector('.examp > .trans')?.innerText,
   }))
-  await db.collection('vocabularies').add({
+  await db.collection('vocabularies-vocabularies').add({
     senses,
     value: vocabulary,
   })
   console.log('Cache set of vocabulary', vocabulary)
   res.status(200).json({
-    data: senses,
+    data: groupPartOfSpeech(senses as SenseRaw[]),
   })
 }
 
