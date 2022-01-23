@@ -58,9 +58,19 @@ const handler: NextApiHandler = async (req, res) => {
     return
   }
 
-  const { data } = await axios.get(
+  const { data, status } = await axios.get(
     `${CAMBRIDGE_DICTIONARY_ORIGIN}/dictionary/english-chinese-traditional/${vocabulary}`
   )
+
+  if (status === 302) {
+    res.status(404).json({
+      error: {
+        message: `Vocabulary not found: ${vocabulary}`,
+      },
+    })
+    return
+  }
+
   const document = parse(data)
   const partOfSpeechWrappers = document.querySelectorAll('.entry-body__el')
   const senseWrappers = partOfSpeechWrappers
