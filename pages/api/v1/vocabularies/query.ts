@@ -23,7 +23,7 @@ interface SenseResponse {
   example: string
   translatedExample: string
 }
-interface VocabularyResponse {
+interface PartOfSpeeches {
   [index: number]: {
     partOfSpeech: string
     pronounce: string
@@ -31,7 +31,7 @@ interface VocabularyResponse {
   }
 }
 
-const groupPartOfSpeech = (senses: SenseRaw[]): VocabularyResponse =>
+const groupPartOfSpeech = (senses: SenseRaw[]): PartOfSpeeches =>
   Object.values(groupBy(senses, 'partOfSpeech')).map((groupedSenses) => ({
     pronounce: groupedSenses[0].pronounce,
     partOfSpeech: groupedSenses[0].partOfSpeech,
@@ -52,8 +52,12 @@ const handler: NextApiHandler = async (req, res) => {
 
   if (!vocabularyQuerySnapshot.empty) {
     console.log('Cache hit of vocabulary', vocabulary)
+    const doc = vocabularyQuerySnapshot.docs[0]
     res.status(200).json({
-      data: groupPartOfSpeech(vocabularyQuerySnapshot.docs[0].data().senses),
+      data: {
+        id: doc.id,
+        partOfSpeeches: groupPartOfSpeech(doc.data().senses),
+      },
     })
     return
   }
@@ -94,13 +98,16 @@ const handler: NextApiHandler = async (req, res) => {
     example: wrapper.querySelector('.examp > .deg')?.innerText,
     translatedExample: wrapper.querySelector('.examp > .trans')?.innerText,
   }))
-  await db.collection('vocabularies-vocabularies').add({
+  const doc = await db.collection('vocabularies-vocabularies').add({
     senses,
     value: vocabulary,
   })
   console.log('Cache set of vocabulary', vocabulary)
   res.status(200).json({
-    data: groupPartOfSpeech(senses as SenseRaw[]),
+    data: {
+      id: doc.id,
+      partOfSpeeches: groupPartOfSpeech(senses as SenseRaw[]),
+    },
   })
 }
 
