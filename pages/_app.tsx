@@ -46,7 +46,7 @@ function App({
 App.getInitialProps = async (context: AppContext) => {
   return {
     ...(await NextApp.getInitialProps(context)),
-    firebaseConfig: JSON.parse(process.env.FIREBASE_CONFIG!),
+    firebaseConfig: JSON.parse(process.env.NEXT_PUBLIC_FIREBASE_CONFIG!),
   }
 }
 
