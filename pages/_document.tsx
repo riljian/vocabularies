@@ -10,11 +10,15 @@ export default class Document extends NextDocument {
       <Html lang="en">
         <Head>
           <meta name="theme-color" content={theme.palette.primary.main} />
-          <meta name="viewport" content="initial-scale=1, width=device-width" />
           <link rel="shortcut icon" href="/favicon.ico" />
           <link
             rel="stylesheet"
             href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"
+          />
+          <link
+            type="text/css"
+            rel="stylesheet"
+            href="https://www.gstatic.com/firebasejs/ui/6.0.0/firebase-ui-auth.css"
           />
           {/* Inject MUI styles first to match with the `prepend: true` configuration. */}
           {(this.props as any).emotionStyleTags}
