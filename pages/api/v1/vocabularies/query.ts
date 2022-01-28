@@ -5,6 +5,7 @@ import { NextApiHandler } from 'next'
 import { parse } from 'node-html-parser'
 import { CAMBRIDGE_DICTIONARY_ORIGIN } from '../../../../internal/configs'
 import { initializeDefaultApp } from '../../../../internal/helpers'
+import { PartOfSpeech } from '../../../../models/Vocabulary'
 
 initializeDefaultApp()
 
@@ -18,20 +19,8 @@ interface SenseRaw {
   example: string
   translatedExample: string
 }
-interface SenseResponse {
-  translated: string
-  example: string
-  translatedExample: string
-}
-interface PartOfSpeeches {
-  [index: number]: {
-    partOfSpeech: string
-    pronounce: string
-    senses: SenseResponse[]
-  }
-}
 
-const groupPartOfSpeech = (senses: SenseRaw[]): PartOfSpeeches =>
+const groupPartOfSpeech = (senses: SenseRaw[]): PartOfSpeech[] =>
   Object.values(groupBy(senses, 'partOfSpeech')).map((groupedSenses) => ({
     pronounce: groupedSenses[0].pronounce,
     partOfSpeech: groupedSenses[0].partOfSpeech,
