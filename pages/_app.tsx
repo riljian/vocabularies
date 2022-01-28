@@ -3,6 +3,7 @@ import { getApp, initializeApp } from '@firebase/app'
 import { CssBaseline, ThemeProvider } from '@mui/material'
 import NextApp, { AppContext, AppProps as NextAppProps } from 'next/app'
 import Head from 'next/head'
+import Layout from '../components/Layout'
 import theme from '../configs/theme'
 import { createEmotionCache } from '../helpers/theme'
 import AuthProvider from '../providers/Auth'
@@ -21,6 +22,7 @@ function App({
   emotionCache = clientSideEmotionCache,
   firebaseConfig,
 }: AppProps) {
+  const { withoutLayout = false, ...restPageProps } = pageProps
   try {
     getApp()
   } catch (e) {
@@ -30,13 +32,19 @@ function App({
   return (
     <CacheProvider value={emotionCache}>
       <Head>
-        <title>{pageProps.title}</title>
+        <title>{restPageProps.title}</title>
         <meta name="viewport" content="initial-scale=1, width=device-width" />
       </Head>
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <AuthProvider>
-          <Component {...pageProps} />
+          {withoutLayout ? (
+            <Component {...restPageProps} />
+          ) : (
+            <Layout>
+              <Component {...restPageProps} />
+            </Layout>
+          )}
         </AuthProvider>
       </ThemeProvider>
     </CacheProvider>
