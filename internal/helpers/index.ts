@@ -1,7 +1,8 @@
 import { applicationDefault, getApp, initializeApp } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
-import { getFirestore } from 'firebase-admin/firestore'
+import { Firestore, getFirestore } from 'firebase-admin/firestore'
 import { NextApiRequest, NextApiResponse } from 'next'
+import { VocabularyActionType } from '../../models/Vocabulary'
 
 const AUTHORIZATION_HEADER_PATTERN = /^Bearer (?<idToken>.*)$/
 
@@ -24,6 +25,18 @@ export const getDefaultFirestore = () => {
   }
   return db
 }
+export const pushVocabularyRecord = (
+  db: Firestore,
+  userId: string,
+  vocabularyId: string,
+  actionType: VocabularyActionType
+) =>
+  db.collection('vocabularies-records').add({
+    user: userId,
+    vocabulary: vocabularyId,
+    type: actionType,
+  })
+
 export const withUserId =
   (
     handler: (

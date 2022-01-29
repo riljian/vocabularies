@@ -8,6 +8,11 @@ export interface PartOfSpeech {
   pronounce: string
   senses: Sense[]
 }
+export enum VocabularyActionType {
+  Query,
+  Fail,
+  Pass,
+}
 
 export default class Vocabulary {
   id: string

@@ -6,9 +6,13 @@ import { CAMBRIDGE_DICTIONARY_ORIGIN } from '../../../../internal/configs'
 import {
   getDefaultFirestore,
   initializeDefaultApp,
+  pushVocabularyRecord,
   withUserId,
 } from '../../../../internal/helpers'
-import { PartOfSpeech } from '../../../../models/Vocabulary'
+import {
+  PartOfSpeech,
+  VocabularyActionType,
+} from '../../../../models/Vocabulary'
 
 initializeDefaultApp()
 
@@ -38,6 +42,7 @@ const handler = async (
   const {
     query: { vocabulary },
     method,
+    userId,
   } = req
   if (method !== 'GET') {
     res.status(405).end()
@@ -50,8 +55,9 @@ const handler = async (
     .get()
 
   if (!vocabularyQuerySnapshot.empty) {
-    console.log('Cache hit of vocabulary', vocabulary)
+    console.info('Cache hit of vocabulary', vocabulary)
     const doc = vocabularyQuerySnapshot.docs[0]
+    await pushVocabularyRecord(db, userId, doc.id, VocabularyActionType.Query)
     res.status(200).json({
       data: {
         id: doc.id,
@@ -101,7 +107,8 @@ const handler = async (
     senses,
     value: vocabulary,
   })
-  console.log('Cache set of vocabulary', vocabulary)
+  console.info('Cache set of vocabulary', vocabulary)
+  await pushVocabularyRecord(db, userId, doc.id, VocabularyActionType.Query)
   res.status(200).json({
     data: {
       id: doc.id,
