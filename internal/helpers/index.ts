@@ -1,3 +1,4 @@
+import admin from 'firebase-admin'
 import { applicationDefault, getApp, initializeApp } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
 import { Firestore, getFirestore } from 'firebase-admin/firestore'
@@ -35,6 +36,7 @@ export const pushVocabularyRecord = (
     user: userId,
     vocabulary: vocabularyId,
     type: actionType,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
   })
 
 export const withUserId =

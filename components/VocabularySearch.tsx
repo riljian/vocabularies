@@ -26,6 +26,11 @@ interface Props {
 const validationSchema = yup.object({
   vocabulary: yup.string().default('').required(),
 })
+const initialState: State = {
+  open: false,
+  result: null,
+  initialValues: validationSchema.getDefault(),
+}
 
 interface State {
   open: boolean
@@ -40,11 +45,9 @@ const VocabularySearch: FC<Props> = ({ triggerSx }) => {
     actions: { query },
   } = useAuthContext()
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'))
-  const [{ open, result, initialValues }, setState] = useState<State>(() => ({
-    open: false,
-    result: null,
-    initialValues: validationSchema.getDefault(),
-  }))
+  const [{ open, result, initialValues }, setState] = useState<State>(
+    () => initialState
+  )
   return (
     <>
       <Fab
@@ -63,6 +66,11 @@ const VocabularySearch: FC<Props> = ({ triggerSx }) => {
         open={open}
         onClose={() => {
           setState((s) => ({ ...s, open: false }))
+        }}
+        onTransitionEnd={() => {
+          if (!open) {
+            setState(initialState)
+          }
         }}
         aria-labelledby={vocabularySearchDialogTitleId}
       >
