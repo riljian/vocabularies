@@ -1,16 +1,18 @@
 import axios from 'axios'
-import { getFirestore } from 'firebase-admin/firestore'
 import { groupBy, pick } from 'lodash'
-import { NextApiHandler } from 'next'
+import { NextApiRequest, NextApiResponse } from 'next'
 import { parse } from 'node-html-parser'
 import { CAMBRIDGE_DICTIONARY_ORIGIN } from '../../../../internal/configs'
-import { initializeDefaultApp } from '../../../../internal/helpers'
+import {
+  getDefaultFirestore,
+  initializeDefaultApp,
+  withUserId,
+} from '../../../../internal/helpers'
 import { PartOfSpeech } from '../../../../models/Vocabulary'
 
 initializeDefaultApp()
 
-const db = getFirestore()
-db.settings({ ignoreUndefinedProperties: true })
+const db = getDefaultFirestore()
 
 interface SenseRaw {
   pronounce: string
@@ -29,10 +31,18 @@ const groupPartOfSpeech = (senses: SenseRaw[]): PartOfSpeech[] =>
     ),
   }))
 
-const handler: NextApiHandler = async (req, res) => {
+const handler = async (
+  req: NextApiRequest & { userId: string },
+  res: NextApiResponse
+) => {
   const {
     query: { vocabulary },
+    method,
   } = req
+  if (method !== 'GET') {
+    res.status(405).end()
+    return
+  }
 
   const vocabularyQuerySnapshot = await db
     .collection('vocabularies-vocabularies')
@@ -100,4 +110,4 @@ const handler: NextApiHandler = async (req, res) => {
   })
 }
 
-export default handler
+export default withUserId(handler)

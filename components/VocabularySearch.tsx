@@ -12,11 +12,11 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material'
-import axios from 'axios'
 import { Field, Form, Formik } from 'formik'
 import { FC, useState } from 'react'
 import * as yup from 'yup'
 import Vocabulary from '../models/Vocabulary'
+import { useAuthContext } from '../providers/Auth'
 import VocabularySearchResult from './VocabularySearchResult'
 
 interface Props {
@@ -36,6 +36,9 @@ interface State {
 const vocabularySearchDialogTitleId = 'vocabulary-search-dialog-title'
 const VocabularySearch: FC<Props> = ({ triggerSx }) => {
   const theme = useTheme()
+  const {
+    actions: { query },
+  } = useAuthContext()
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'))
   const [{ open, result, initialValues }, setState] = useState<State>(() => ({
     open: false,
@@ -68,15 +71,9 @@ const VocabularySearch: FC<Props> = ({ triggerSx }) => {
           validationSchema={validationSchema}
           initialValues={initialValues}
           onSubmit={(values) => {
-            const { vocabulary } = values
             setState((s) => ({ ...s, result: null }))
-            return axios
-              .get('/api/v1/vocabularies/query', {
-                params: {
-                  vocabulary,
-                },
-              })
-              .then(({ data: { data } }) => {
+            return query(values.vocabulary)
+              .then((data) => {
                 setState((s) => ({
                   ...s,
                   initialValues: values,
