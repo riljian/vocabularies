@@ -34,6 +34,7 @@ const AuthContext = createContext<Context>({
   actions: {
     signOut: () => Promise.reject(),
     query: () => Promise.reject(),
+    getRecords: () => Promise.reject(),
   },
 })
 

@@ -1,3 +1,5 @@
+import { Timestamp } from '@firebase/firestore'
+
 interface Sense {
   translated: string
   example: string
@@ -13,6 +15,23 @@ export enum VocabularyActionType {
   Fail,
   Pass,
 }
+export interface VocabularyRecord {
+  user: string
+  vocabulary: string
+  createdAt: Timestamp
+  type: VocabularyActionType
+}
+export interface VocabularyRecordStatistics {
+  vocabulary: {
+    id: string
+    value: string
+  }
+  queriedTimes: number
+  failedTimes: number
+  lastQueriedAt: Date | null
+  lastFailedAt: Date | null
+}
+export type VocabularyRecordDuration = 'weeks' | 'months' | 'years'
 
 export default class Vocabulary {
   id: string
