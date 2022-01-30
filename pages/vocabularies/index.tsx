@@ -1,8 +1,10 @@
 import { Icon } from '@iconify/react'
 import { Box, Stack, ToggleButton, ToggleButtonGroup } from '@mui/material'
+import { orderBy as lodashOrderBy } from 'lodash'
 import type { NextPage } from 'next'
 import { GetStaticProps } from 'next'
-import { useEffect, useState } from 'react'
+import { ComponentProps, useEffect, useMemo, useState } from 'react'
+import VocabularySummaryTable from '../../components/VocabularySummaryTable'
 import { bottomNavigationConfigs } from '../../configs/path'
 import {
   VocabularyRecordDuration,
@@ -10,7 +12,11 @@ import {
 } from '../../models/Vocabulary'
 import { useAuthContext } from '../../providers/Auth'
 
-interface State {
+interface State
+  extends Pick<
+    ComponentProps<typeof VocabularySummaryTable>,
+    'sortDirection' | 'orderBy' | 'selectedVocabularies'
+  > {
   view: 'table' | 'card'
   duration: VocabularyRecordDuration
   summaries: VocabularyRecordStatistics[]
@@ -20,6 +26,9 @@ const initialState: State = {
   view: 'table',
   duration: 'weeks',
   summaries: [],
+  orderBy: 'lastQueriedAt',
+  sortDirection: 'desc',
+  selectedVocabularies: [],
 }
 const { title } = bottomNavigationConfigs[0]
 
@@ -27,9 +36,16 @@ const Vocabulary: NextPage = () => {
   const {
     actions: { getRecords },
   } = useAuthContext()
-  const [{ view, duration, summaries }, setState] = useState<State>(
-    () => initialState
-  )
+  const [
+    { view, duration, summaries, selectedVocabularies, sortDirection, orderBy },
+    setState,
+  ] = useState<State>(() => initialState)
+  const orderedSummaries = useMemo(() => {
+    if (orderBy === 'vocabulary') {
+      return lodashOrderBy(summaries, ['vocabulary.value'], [sortDirection!])
+    }
+    return lodashOrderBy(summaries, [orderBy], [sortDirection!])
+  }, [summaries, sortDirection, orderBy])
 
   useEffect(() => {
     getRecords(duration)
@@ -80,7 +96,22 @@ const Vocabulary: NextPage = () => {
           </ToggleButton>
         </ToggleButtonGroup>
       </Box>
-      <Box component="pre">{JSON.stringify(summaries, null, 2)}</Box>
+      <VocabularySummaryTable
+        summaries={orderedSummaries}
+        sortDirection={sortDirection}
+        orderBy={orderBy}
+        onOrderChange={(changedOrderBy, changedDirection) => {
+          setState((s) => ({
+            ...s,
+            orderBy: changedOrderBy,
+            sortDirection: changedDirection,
+          }))
+        }}
+        selectedVocabularies={selectedVocabularies}
+        onSelectedChange={(changedValue) => {
+          setState((s) => ({ ...s, selectedVocabularies: changedValue }))
+        }}
+      />
     </Stack>
   )
 }
