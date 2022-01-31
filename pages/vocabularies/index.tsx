@@ -11,7 +11,7 @@ import {
 import { orderBy as lodashOrderBy } from 'lodash'
 import type { NextPage } from 'next'
 import { GetStaticProps } from 'next'
-import { ComponentProps, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import VocabularySummaryCarousel from '../../components/VocabularySummaryCarousel'
 import VocabularySummaryTable from '../../components/VocabularySummaryTable'
 import { bottomNavigationConfigs } from '../../configs/path'
@@ -22,11 +22,7 @@ import {
 import { useAuthContext } from '../../providers/Auth'
 
 type SortDirection = 'asc' | 'desc'
-interface State
-  extends Pick<
-    ComponentProps<typeof VocabularySummaryTable>,
-    'selectedVocabularies'
-  > {
+interface State {
   view: 'table' | 'card'
   duration: VocabularyRecordDuration
   summaries: VocabularyRecordStatistics[]
@@ -40,7 +36,6 @@ const initialState: State = {
   summaries: [],
   orderBy: 'lastQueriedAt',
   sortDirection: 'desc',
-  selectedVocabularies: [],
 }
 const sortDirectionOptions: { label: string; value: SortDirection }[] = [
   { label: '遞增', value: 'asc' },
@@ -67,10 +62,8 @@ const Vocabulary: NextPage = () => {
   const {
     actions: { getRecords },
   } = useAuthContext()
-  const [
-    { view, duration, summaries, selectedVocabularies, sortDirection, orderBy },
-    setState,
-  ] = useState<State>(() => initialState)
+  const [{ view, duration, summaries, sortDirection, orderBy }, setState] =
+    useState<State>(() => initialState)
   const orderedSummaries = useMemo(() => {
     if (orderBy === 'vocabulary') {
       return lodashOrderBy(summaries, ['vocabulary.value'], [sortDirection!])
@@ -172,13 +165,7 @@ const Vocabulary: NextPage = () => {
         <span>排序</span>
       </Box>
       {view === 'table' && (
-        <VocabularySummaryTable
-          summaries={orderedSummaries}
-          selectedVocabularies={selectedVocabularies}
-          onSelectedChange={(changedValue) => {
-            setState((s) => ({ ...s, selectedVocabularies: changedValue }))
-          }}
-        />
+        <VocabularySummaryTable summaries={orderedSummaries} />
       )}
       {view === 'card' && (
         <VocabularySummaryCarousel summaries={orderedSummaries} />
