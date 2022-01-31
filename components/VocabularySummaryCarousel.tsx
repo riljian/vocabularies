@@ -20,15 +20,13 @@ interface Props {
   summaries: VocabularyRecordStatistics[]
 }
 
-const RedundantArrow = () => null
 const settings: Settings = {
   dots: false,
   infinite: true,
   autoplay: false,
   slidesToShow: 1,
   slidesToScroll: 1,
-  nextArrow: <RedundantArrow />,
-  prevArrow: <RedundantArrow />,
+  arrows: false,
 }
 const VocabularySummaryCarousel: FC<Props> = ({ summaries }) => {
   return (

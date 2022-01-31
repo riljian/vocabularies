@@ -51,7 +51,7 @@ const handler = async (
     `${CAMBRIDGE_DICTIONARY_ORIGIN}/dictionary/english-chinese-traditional/${vocabulary}`
   )
 
-  if (status === 302) {
+  if (status === 302 || status === 404) {
     res.status(404).json({
       error: {
         message: `Vocabulary not found: ${vocabulary}`,
