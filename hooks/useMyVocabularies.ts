@@ -11,6 +11,7 @@ import {
 import axios from 'axios'
 import { sub } from 'date-fns'
 import { useMemo } from 'react'
+import { groupPartOfSpeech } from '../helpers'
 import {
   PartOfSpeech,
   VocabularyActionType,
@@ -121,7 +122,12 @@ const useMyVocabularies = (me: User | null): Export => {
         vocabularyDocs.forEach((vocabularyDoc) => {
           const id = vocabularyDoc.id
           const aggregatedValue = aggregated.get(id)
-          aggregatedValue.vocabulary.value = vocabularyDoc.data().value
+          const { value, senses } = vocabularyDoc.data()
+          aggregatedValue.vocabulary = {
+            value,
+            partOfSpeeches: groupPartOfSpeech(senses),
+            id: aggregatedValue.vocabulary.id,
+          }
           aggregated.set(id, aggregatedValue)
         })
         return Array.from(aggregated.values())

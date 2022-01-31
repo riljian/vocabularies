@@ -6,63 +6,75 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TableSortLabel,
-  TableSortLabelProps,
 } from '@mui/material'
-import { formatRelative } from 'date-fns'
-import { FC } from 'react'
+import { head } from 'lodash'
+import { nanoid } from 'nanoid'
+import { FC, useMemo } from 'react'
 import { VocabularyRecordStatistics } from '../models/Vocabulary'
 
 interface Props {
   summaries: VocabularyRecordStatistics[]
-  sortDirection: TableSortLabelProps['direction']
-  orderBy: keyof VocabularyRecordStatistics
-  onOrderChange?: (
-    changedOrderBy: keyof VocabularyRecordStatistics,
-    changedDirection: TableSortLabelProps['direction']
-  ) => void
   selectedVocabularies: string[]
   onSelectedChange?: (changedValue: string[]) => void
 }
-interface Column {
-  label: string
-  key: keyof VocabularyRecordStatistics
-  renderer?: (
-    value: any,
-    context: VocabularyRecordStatistics
-  ) => JSX.Element | string
+interface Cell {
+  rowSpan?: number
+  content: JSX.Element | string
+}
+interface SenseRow {
+  id: string
+  vocabularyId?: string
+  totalSenses?: number
+  cells: Cell[]
 }
 
-const columns: Column[] = [
-  {
-    label: '單字',
-    key: 'vocabulary',
-    renderer: (vocabulary) => vocabulary.value,
-  },
-  {
-    label: '遺忘',
-    key: 'failedTimes',
-  },
-  {
-    label: '查詢時間',
-    key: 'lastQueriedAt',
-    renderer: (value) => formatRelative(value, new Date()),
-  },
-]
+const transformSummariesToSenseRows = (
+  summaries: VocabularyRecordStatistics[]
+): SenseRow[] => {
+  const result: SenseRow[] = []
+  for (const summary of summaries) {
+    const { partOfSpeeches, value, id } = summary.vocabulary
+    const vocabularyResult: SenseRow[] = []
+    for (const partOfSpeechWrapper of partOfSpeeches) {
+      const { senses, partOfSpeech } = partOfSpeechWrapper
+      for (const sense of senses) {
+        const { translated } = sense
+        vocabularyResult.unshift({
+          id: nanoid(),
+          cells: [{ content: translated }],
+        })
+      }
+      vocabularyResult[0].cells.unshift({
+        rowSpan: senses.length,
+        content: partOfSpeech,
+      })
+    }
+    const firstVocabularyRow = head(vocabularyResult)!
+    firstVocabularyRow.cells.unshift({
+      rowSpan: vocabularyResult.length,
+      content: value,
+    })
+    firstVocabularyRow.vocabularyId = id
+    firstVocabularyRow.totalSenses = vocabularyResult.length
+    result.push(...vocabularyResult)
+  }
+  return result
+}
 
 const VocabularySummaryTable: FC<Props> = ({
   summaries,
-  sortDirection,
-  orderBy,
-  onOrderChange,
   selectedVocabularies,
   onSelectedChange,
 }) => {
   const numSelected = selectedVocabularies.length
   const rowCount = summaries.length
+  const senseRows = useMemo(
+    () => transformSummariesToSenseRows(summaries),
+    [summaries]
+  )
   return (
     <TableContainer>
-      <Table stickyHeader>
+      <Table>
         <TableHead>
           <TableRow>
             <TableCell padding="checkbox">
@@ -81,56 +93,37 @@ const VocabularySummaryTable: FC<Props> = ({
                 }}
               />
             </TableCell>
-            {columns.map(({ label, key }) => {
-              const isActive = orderBy === key
-              const defaultDirection = key === 'vocabulary' ? 'asc' : 'desc'
-              const direction = isActive ? sortDirection : defaultDirection
-              const oppositeDirection = direction === 'asc' ? 'desc' : 'asc'
-              return (
-                <TableCell key={label}>
-                  <TableSortLabel
-                    active={isActive}
-                    direction={direction}
-                    onClick={() => {
-                      onOrderChange &&
-                        onOrderChange(
-                          key,
-                          isActive ? oppositeDirection : direction
-                        )
-                    }}
-                  >
-                    {label}
-                  </TableSortLabel>
-                </TableCell>
-              )
-            })}
+            <TableCell>單字</TableCell>
+            <TableCell>詞性</TableCell>
+            <TableCell>翻譯</TableCell>
           </TableRow>
         </TableHead>
-        <TableBody>
-          {summaries.map((summary) => {
-            const vocabularyId = summary.vocabulary.id
+        <TableBody sx={{ td: { verticalAlign: 'top' } }}>
+          {senseRows.map(({ id, vocabularyId, totalSenses, cells }) => {
             return (
-              <TableRow key={vocabularyId}>
-                <TableCell padding="checkbox">
-                  <Checkbox
-                    color="primary"
-                    checked={selectedVocabularies.includes(vocabularyId)}
-                    onChange={(event) => {
-                      const { checked } = event.target
-                      onSelectedChange &&
-                        onSelectedChange(
-                          checked
-                            ? [...selectedVocabularies, vocabularyId]
-                            : selectedVocabularies.filter(
-                                (id) => id !== vocabularyId
-                              )
-                        )
-                    }}
-                  />
-                </TableCell>
-                {columns.map(({ label, key, renderer }) => (
-                  <TableCell key={label}>
-                    {renderer ? renderer(summary[key], summary) : summary[key]}
+              <TableRow key={id}>
+                {vocabularyId && (
+                  <TableCell padding="checkbox" rowSpan={totalSenses}>
+                    <Checkbox
+                      color="primary"
+                      checked={selectedVocabularies.includes(vocabularyId)}
+                      onChange={(event) => {
+                        const { checked } = event.target
+                        onSelectedChange &&
+                          onSelectedChange(
+                            checked
+                              ? [...selectedVocabularies, vocabularyId]
+                              : selectedVocabularies.filter(
+                                  (id) => id !== vocabularyId
+                                )
+                          )
+                      }}
+                    />
+                  </TableCell>
+                )}
+                {cells.map(({ content, rowSpan }, index) => (
+                  <TableCell rowSpan={rowSpan} key={`${id}-${index}`}>
+                    {content}
                   </TableCell>
                 ))}
               </TableRow>

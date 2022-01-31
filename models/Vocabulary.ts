@@ -5,6 +5,13 @@ interface Sense {
   example: string
   translatedExample: string
 }
+export interface SenseRaw {
+  pronounce: string
+  partOfSpeech: string
+  translated: string
+  example: string
+  translatedExample: string
+}
 export interface PartOfSpeech {
   partOfSpeech: string
   pronounce: string
@@ -25,6 +32,7 @@ export interface VocabularyRecordStatistics {
   vocabulary: {
     id: string
     value: string
+    partOfSpeeches: PartOfSpeech[]
   }
   queriedTimes: number
   failedTimes: number

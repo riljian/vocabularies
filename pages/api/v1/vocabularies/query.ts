@@ -1,7 +1,7 @@
 import axios from 'axios'
-import { groupBy, pick } from 'lodash'
 import { NextApiRequest, NextApiResponse } from 'next'
 import { parse } from 'node-html-parser'
+import { groupPartOfSpeech } from '../../../../helpers'
 import { CAMBRIDGE_DICTIONARY_ORIGIN } from '../../../../internal/configs'
 import {
   getDefaultFirestore,
@@ -9,31 +9,11 @@ import {
   pushVocabularyRecord,
   withUserId,
 } from '../../../../internal/helpers'
-import {
-  PartOfSpeech,
-  VocabularyActionType,
-} from '../../../../models/Vocabulary'
+import { SenseRaw, VocabularyActionType } from '../../../../models/Vocabulary'
 
 initializeDefaultApp()
 
 const db = getDefaultFirestore()
-
-interface SenseRaw {
-  pronounce: string
-  partOfSpeech: string
-  translated: string
-  example: string
-  translatedExample: string
-}
-
-const groupPartOfSpeech = (senses: SenseRaw[]): PartOfSpeech[] =>
-  Object.values(groupBy(senses, 'partOfSpeech')).map((groupedSenses) => ({
-    pronounce: groupedSenses[0].pronounce,
-    partOfSpeech: groupedSenses[0].partOfSpeech,
-    senses: groupedSenses.map((sense) =>
-      pick(sense, ['translated', 'example', 'translatedExample'])
-    ),
-  }))
 
 const handler = async (
   req: NextApiRequest & { userId: string },
