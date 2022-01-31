@@ -12,6 +12,7 @@ import { orderBy as lodashOrderBy } from 'lodash'
 import type { NextPage } from 'next'
 import { GetStaticProps } from 'next'
 import { ComponentProps, useEffect, useMemo, useState } from 'react'
+import VocabularySummaryCarousel from '../../components/VocabularySummaryCarousel'
 import VocabularySummaryTable from '../../components/VocabularySummaryTable'
 import { bottomNavigationConfigs } from '../../configs/path'
 import {
@@ -34,7 +35,7 @@ interface State
 }
 
 const initialState: State = {
-  view: 'table',
+  view: 'card',
   duration: 'weeks',
   summaries: [],
   orderBy: 'lastQueriedAt',
@@ -88,7 +89,7 @@ const Vocabulary: NextPage = () => {
   }, [duration, getRecords])
 
   return (
-    <Stack>
+    <Stack spacing={1}>
       <Box
         sx={{
           display: 'flex',
@@ -120,7 +121,9 @@ const Vocabulary: NextPage = () => {
           size="small"
           value={view}
           onChange={(event, newView) => {
-            setState((s) => ({ ...s, view: newView }))
+            if (newView !== null) {
+              setState((s) => ({ ...s, view: newView }))
+            }
           }}
         >
           <ToggleButton value="table">
@@ -131,7 +134,7 @@ const Vocabulary: NextPage = () => {
           </ToggleButton>
         </ToggleButtonGroup>
       </Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', columnGap: 1, mt: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', columnGap: 1 }}>
         <span>依</span>
         <FormControl size="small">
           <Select
@@ -168,13 +171,18 @@ const Vocabulary: NextPage = () => {
         </ToggleButtonGroup>
         <span>排序</span>
       </Box>
-      <VocabularySummaryTable
-        summaries={orderedSummaries}
-        selectedVocabularies={selectedVocabularies}
-        onSelectedChange={(changedValue) => {
-          setState((s) => ({ ...s, selectedVocabularies: changedValue }))
-        }}
-      />
+      {view === 'table' && (
+        <VocabularySummaryTable
+          summaries={orderedSummaries}
+          selectedVocabularies={selectedVocabularies}
+          onSelectedChange={(changedValue) => {
+            setState((s) => ({ ...s, selectedVocabularies: changedValue }))
+          }}
+        />
+      )}
+      {view === 'card' && (
+        <VocabularySummaryCarousel summaries={orderedSummaries} />
+      )}
     </Stack>
   )
 }
