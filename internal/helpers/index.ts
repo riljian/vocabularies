@@ -30,12 +30,14 @@ export const pushVocabularyRecord = (
   db: Firestore,
   userId: string,
   vocabularyId: string,
-  actionType: VocabularyActionType
+  actionType: VocabularyActionType,
+  examSessionId?: string
 ) =>
   db.collection('vocabularies-records').add({
     user: userId,
     vocabulary: vocabularyId,
     type: actionType,
+    examSession: examSessionId,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   })
 
