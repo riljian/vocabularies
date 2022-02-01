@@ -135,6 +135,7 @@ const CreateExam: NextPage = () => {
         <TextField
           variant="standard"
           label="Vocabulary"
+          autoCapitalize="false"
           autoFocus
           fullWidth
           value={inputValue}

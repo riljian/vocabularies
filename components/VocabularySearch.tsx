@@ -103,6 +103,7 @@ const VocabularySearch: FC<Props> = ({ triggerSx }) => {
                     variant="standard"
                     label="Search"
                     autoFocus
+                    autoCapitalize="false"
                     sx={{
                       flex: '1 0 auto',
                     }}
