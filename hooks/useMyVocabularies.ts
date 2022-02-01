@@ -130,6 +130,9 @@ const useMyVocabularies = (me: User | null): Export => {
           where('createdAt', '>=', sub(new Date(), { [duration]: 1 }))
         )
         const aggregated = aggregateRecords(await getDocs(recordQuery))
+        if (aggregated.size === 0) {
+          return []
+        }
         const vocabularyQuery = query(
           collection(db, 'vocabularies-vocabularies'),
           where(documentId(), 'in', Array.from(aggregated.keys()))
