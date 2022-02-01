@@ -1,10 +1,17 @@
-import { Typography } from '@mui/material'
+import { Button, Stack } from '@mui/material'
 import type { GetStaticProps, NextPage } from 'next'
-import { bottomNavigationConfigs } from '../../configs/path'
+import Link from '../../components/Link'
+import { bottomNavigationConfigs, CREATE_EXAM_PATH } from '../../configs/path'
 
 const { title } = bottomNavigationConfigs[1]
 const Exam: NextPage = () => {
-  return <Typography>{title}</Typography>
+  return (
+    <Stack spacing={1}>
+      <Button variant="contained" component={Link} href={CREATE_EXAM_PATH}>
+        新增測驗
+      </Button>
+    </Stack>
+  )
 }
 
 export const getStaticProps: GetStaticProps = async () => ({

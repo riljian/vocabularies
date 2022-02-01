@@ -14,7 +14,7 @@ import VocabularySearch from './VocabularySearch'
 const Layout: FC = ({ children }) => {
   const { pathname, push } = useRouter()
   return (
-    <Box sx={{ pb: 7, pt: 2 }}>
+    <Box sx={{ pb: 16, pt: 2 }}>
       <Container>{children}</Container>
       <Paper
         elevation={3}
@@ -38,7 +38,7 @@ const Layout: FC = ({ children }) => {
         </BottomNavigation>
       </Paper>
       <VocabularySearch
-        triggerSx={{ position: 'fixed', bottom: 72, right: 16 }}
+        triggerSx={{ position: 'fixed', bottom: 64, right: 16 }}
       />
     </Box>
   )

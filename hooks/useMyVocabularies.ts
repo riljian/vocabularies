@@ -1,15 +1,20 @@
 import { User } from '@firebase/auth'
 import {
+  addDoc,
   collection,
+  doc as firestoreDoc,
   documentId,
+  getDoc,
   getDocs,
   getFirestore,
   query,
   QuerySnapshot,
+  serverTimestamp,
   where,
 } from '@firebase/firestore'
 import axios from 'axios'
 import { sub } from 'date-fns'
+import { shuffle } from 'lodash'
 import { useMemo } from 'react'
 import { groupPartOfSpeech } from '../helpers'
 import {
@@ -20,6 +25,10 @@ import {
   VocabularyRecordStatistics,
 } from '../models/Vocabulary'
 
+export enum ExamSessionMode {
+  Practice,
+  Exam,
+}
 interface Export {
   actions: {
     query: (
@@ -28,6 +37,11 @@ interface Export {
     getRecords: (
       duration: VocabularyRecordDuration
     ) => Promise<VocabularyRecordStatistics[]>
+    createExam: (vocabularies: string[]) => Promise<string>
+    createExamSession: (
+      examId: string,
+      mode: ExamSessionMode
+    ) => Promise<string>
   }
 }
 
@@ -91,6 +105,8 @@ const useMyVocabularies = (me: User | null): Export => {
       return {
         query: reject,
         getRecords: reject,
+        createExam: reject,
+        createExamSession: reject,
       }
     }
     return {
@@ -131,6 +147,29 @@ const useMyVocabularies = (me: User | null): Export => {
           aggregated.set(id, aggregatedValue)
         })
         return Array.from(aggregated.values())
+      },
+      createExam: async (vocabularies) => {
+        const db = getFirestore()
+        const doc = await addDoc(collection(db, 'vocabularies-exams'), {
+          vocabularies,
+          createdAt: serverTimestamp(),
+        })
+        return doc.id
+      },
+      createExamSession: async (examId, examSessionMode) => {
+        const db = getFirestore()
+        const { vocabularies } = (
+          await getDoc(firestoreDoc(db, `vocabularies-exams/${examId}`))
+        ).data()!
+        const doc = await addDoc(collection(db, 'vocabularies-exam-sessions'), {
+          exam: examId,
+          vocabularies: shuffle(vocabularies),
+          mode: examSessionMode,
+          owner: me.uid,
+          progress: 0,
+          createdAt: serverTimestamp(),
+        })
+        return doc.id
       },
     }
   }, [me])
