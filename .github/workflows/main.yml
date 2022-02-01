@@ -23,7 +23,7 @@ jobs:
       - name: Configure Docker for GCR
         run: gcloud auth configure-docker
       - name: Build the Docker image
-        run: docker build . --file Dockerfile --tag ${{ secrets.IMAGE_NAME }}:${{ github.sha }}
+        run: docker build . --file Dockerfile --tag ${{ secrets.IMAGE_NAME }}:${{ github.sha }} --build-arg FIREBASE_CONFIG=${{ secrets.FIREBASE_CONFIG }}
       - name: Push the Docker image
         run: docker push ${{ secrets.IMAGE_NAME }}:${{ github.sha }}
 

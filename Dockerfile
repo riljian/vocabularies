@@ -12,6 +12,9 @@ RUN npm ci
 FROM node:alpine AS builder
 WORKDIR /app
 
+ARG FIREBASE_CONFIG
+ENV NEXT_PUBLIC_FIREBASE_CONFIG=${FIREBASE_CONFIG}
+
 COPY . .
 COPY --from=deps /app/node_modules ./node_modules
 RUN npm run build && npm ci --production

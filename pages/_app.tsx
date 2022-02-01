@@ -1,7 +1,7 @@
 import { CacheProvider, EmotionCache } from '@emotion/react'
 import { getApp, initializeApp } from '@firebase/app'
 import { CssBaseline, ThemeProvider } from '@mui/material'
-import NextApp, { AppContext, AppProps as NextAppProps } from 'next/app'
+import { AppProps as NextAppProps } from 'next/app'
 import Head from 'next/head'
 import Layout from '../components/Layout'
 import theme from '../configs/theme'
@@ -20,13 +20,19 @@ function App({
   Component,
   pageProps,
   emotionCache = clientSideEmotionCache,
-  firebaseConfig,
 }: AppProps) {
   const { withoutLayout = false, ...restPageProps } = pageProps
   try {
     getApp()
   } catch (e) {
-    initializeApp(firebaseConfig)
+    initializeApp(
+      JSON.parse(
+        Buffer.from(
+          process.env.NEXT_PUBLIC_FIREBASE_CONFIG!,
+          'base64'
+        ).toString()
+      )
+    )
   }
 
   return (
@@ -49,13 +55,6 @@ function App({
       </ThemeProvider>
     </CacheProvider>
   )
-}
-
-App.getInitialProps = async (context: AppContext) => {
-  return {
-    ...(await NextApp.getInitialProps(context)),
-    firebaseConfig: JSON.parse(process.env.NEXT_PUBLIC_FIREBASE_CONFIG!),
-  }
 }
 
 export default App
