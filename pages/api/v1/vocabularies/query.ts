@@ -50,8 +50,10 @@ const handler = async (
   const { data, status } = await axios.get(
     `${CAMBRIDGE_DICTIONARY_ORIGIN}/dictionary/english-chinese-traditional/${vocabulary}`
   )
+  const document = parse(data)
+  const partOfSpeechWrappers = document.querySelectorAll('.entry-body__el')
 
-  if (status === 302 || status === 404) {
+  if (status === 302 || status === 404 || partOfSpeechWrappers.length === 0) {
     res.status(404).json({
       error: {
         message: `Vocabulary not found: ${vocabulary}`,
@@ -60,8 +62,6 @@ const handler = async (
     return
   }
 
-  const document = parse(data)
-  const partOfSpeechWrappers = document.querySelectorAll('.entry-body__el')
   const senseWrappers = partOfSpeechWrappers
     .map((wrapper) =>
       wrapper.querySelectorAll('[data-wl-senseid]').map((ele) => {

@@ -82,31 +82,31 @@ const CreateExam: NextPage = () => {
       .filter(({ loading, value }) => loading && !request.has(value))
       .forEach(({ value: targetValue }) => {
         request.add(targetValue)
+        const getNewStateFactory = (payload: any) => (s: State) => {
+          const { vocabularyCandidates } = s
+          const index = findIndex(
+            vocabularyCandidates,
+            ({ value }) => value === targetValue
+          )
+          if (index === -1) {
+            return s
+          }
+          const newCandidates = [...vocabularyCandidates]
+          newCandidates.splice(index, 1, {
+            value: targetValue,
+            ...payload,
+          })
+          return {
+            ...s,
+            vocabularyCandidates: newCandidates,
+          }
+        }
         query(targetValue)
           .then(({ id }) => {
-            setState((s) => {
-              const { vocabularyCandidates } = s
-              const index = findIndex(
-                vocabularyCandidates,
-                ({ value }) => value === targetValue
-              )
-              if (index === -1) {
-                return s
-              }
-              const newCandidates = [...vocabularyCandidates]
-              newCandidates.splice(index, 1, {
-                id,
-                value: targetValue,
-                loading: false,
-              })
-              return {
-                ...s,
-                vocabularyCandidates: newCandidates,
-              }
-            })
+            setState(getNewStateFactory({ id, loading: false }))
           })
-          .catch((error) => {
-            console.error(error)
+          .catch(() => {
+            setState(getNewStateFactory({ loading: false }))
           })
       })
   }, [vocabularyCandidates, query])

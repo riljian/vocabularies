@@ -9,6 +9,7 @@ import {
   FabProps,
   IconButton,
   TextField,
+  Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material'
@@ -129,8 +130,10 @@ const VocabularySearch: FC<Props> = ({ triggerSx }) => {
                   >
                     <CircularProgress />
                   </Box>
+                ) : result ? (
+                  <VocabularySearchResult vocabulary={result} />
                 ) : (
-                  result && <VocabularySearchResult vocabulary={result} />
+                  <Typography>無搜尋結果</Typography>
                 )}
               </DialogContent>
             </>
