@@ -4,6 +4,8 @@ import {
   Button,
   CircularProgress,
   IconButton,
+  Menu,
+  MenuItem,
   Stack,
   Table,
   TableBody,
@@ -13,10 +15,11 @@ import {
   TableRow,
   TextField,
 } from '@mui/material'
-import { find, findIndex } from 'lodash'
+import { differenceBy, findIndex } from 'lodash'
 import type { GetStaticProps, NextPage } from 'next'
 import { useRouter } from 'next/router'
 import {
+  FC,
   FormEvent,
   useCallback,
   useEffect,
@@ -36,6 +39,56 @@ interface Candidate {
 interface State {
   vocabularyCandidates: Candidate[]
   inputValue: string
+}
+
+const MoreAction: FC<{
+  pushCandidates?: (candidates: Candidate[]) => void
+}> = ({ pushCandidates }) => {
+  const {
+    actions: { getRecords },
+  } = useAuthContext()
+  const [{ anchorEl }, setState] = useState<{
+    anchorEl: HTMLButtonElement | null
+  }>(() => ({ anchorEl: null }))
+  const closeMenu = useCallback(() => {
+    setState((s) => ({ ...s, anchorEl: null }))
+  }, [])
+  return (
+    <>
+      <IconButton
+        onClick={(event) => {
+          setState((s) => ({ ...s, anchorEl: event.currentTarget }))
+        }}
+      >
+        <Icon icon="ic:round-more-vert" />
+      </IconButton>
+      <Menu open={!!anchorEl} anchorEl={anchorEl} onClose={closeMenu}>
+        <MenuItem
+          onClick={() => {
+            getRecords('weeks')
+              .then((result) => {
+                pushCandidates &&
+                  pushCandidates(
+                    result.map(({ vocabulary: { id, value } }) => ({
+                      id,
+                      value,
+                      loading: false,
+                    }))
+                  )
+              })
+              .catch((error) => {
+                console.error(error)
+              })
+              .finally(() => {
+                closeMenu()
+              })
+          }}
+        >
+          近 1 週紀錄匯入
+        </MenuItem>
+      </Menu>
+    </>
+  )
 }
 
 const CreateExam: NextPage = () => {
@@ -77,6 +130,18 @@ const CreateExam: NextPage = () => {
     },
     [createExam, createExamSession, submittableVocabularyIds, push]
   )
+  const pushCandidates = useCallback((candidates: Candidate[]) => {
+    setState((s) => {
+      const diff = differenceBy(candidates, s.vocabularyCandidates, 'value')
+      if (diff.length > 0) {
+        return {
+          ...s,
+          vocabularyCandidates: [...diff, ...s.vocabularyCandidates],
+        }
+      }
+      return s
+    })
+  }, [])
 
   useEffect(() => {
     const { current: request } = requestsRef
@@ -120,17 +185,7 @@ const CreateExam: NextPage = () => {
         sx={{ display: 'flex', columnGap: 1 }}
         onSubmit={(event: FormEvent<HTMLFormElement>) => {
           event.preventDefault()
-          if (
-            !find(vocabularyCandidates, ({ value }) => value === inputValue)
-          ) {
-            setState((s) => ({
-              ...s,
-              vocabularyCandidates: [
-                { value: inputValue, loading: true },
-                ...s.vocabularyCandidates,
-              ],
-            }))
-          }
+          pushCandidates([{ value: inputValue, loading: true }])
           setState((s) => ({ ...s, inputValue: '' }))
         }}
       >
@@ -148,6 +203,7 @@ const CreateExam: NextPage = () => {
         <IconButton type="submit" color="primary" disabled={!addable}>
           <Icon icon="clarity:add-text-line" />
         </IconButton>
+        <MoreAction pushCandidates={pushCandidates} />
       </Box>
       <TableContainer>
         <Table>
