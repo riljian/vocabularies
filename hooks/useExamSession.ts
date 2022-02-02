@@ -14,13 +14,11 @@ import axios from 'axios'
 import { useCallback, useEffect, useState } from 'react'
 import { groupPartOfSpeech } from '../helpers'
 import Vocabulary from '../models/Vocabulary'
-import { ExamSessionMode } from './useMyVocabularies'
 
 type VocabularyWithValue = Vocabulary & { value: string }
 interface State {
   vocabularies: VocabularyWithValue[]
   progress: number
-  mode: ExamSessionMode | null
   owner: string | null
 }
 interface Export {
@@ -34,7 +32,6 @@ const useExamSession = (me: User, sessionId: string): Export => {
   const [state, setState] = useState<State>(() => ({
     vocabularies: [],
     progress: 0,
-    mode: null,
     owner: null,
   }))
   const goToNext = useCallback<Export['actions']['goToNext']>(
@@ -60,11 +57,9 @@ const useExamSession = (me: User, sessionId: string): Export => {
   useEffect(() => {
     const loadSession = async (id: string) => {
       const db = getFirestore()
-      const {
-        vocabularies: vocabularyIds,
-        mode,
-        owner,
-      } = (await getDoc(doc(db, `vocabularies-exam-sessions/${id}`))).data()!
+      const { vocabularies: vocabularyIds, owner } = (
+        await getDoc(doc(db, `vocabularies-exam-sessions/${id}`))
+      ).data()!
       const vocabularyDocs = await getDocs(
         query(
           collection(db, 'vocabularies-vocabularies'),
@@ -83,7 +78,6 @@ const useExamSession = (me: User, sessionId: string): Export => {
       setState((s) => ({
         ...s,
         vocabularies: vocabularyIds.map((id: string) => vocabularyMap.get(id)),
-        mode,
         owner,
       }))
     }

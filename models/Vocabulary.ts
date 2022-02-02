@@ -17,6 +17,10 @@ export interface PartOfSpeech {
   pronounce: string
   senses: Sense[]
 }
+export enum ExamSessionMode {
+  Practice,
+  Exam,
+}
 export enum VocabularyActionType {
   Query,
   Fail,
@@ -38,6 +42,15 @@ export interface VocabularyRecordStatistics {
   failedTimes: number
   lastQueriedAt: Date | null
   lastFailedAt: Date | null
+}
+export interface VocabularyExamSession {
+  id: string
+  createdAt: Date
+  exam: string
+  owner: string
+  progress: number
+  failed: number
+  vocabularies: string[]
 }
 export type VocabularyRecordDuration = 'weeks' | 'months' | 'years'
 

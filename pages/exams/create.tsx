@@ -25,7 +25,7 @@ import {
   useState,
 } from 'react'
 import { EXAM_PATH } from '../../configs/path'
-import { ExamSessionMode } from '../../hooks/useMyVocabularies'
+import { ExamSessionMode } from '../../models/Vocabulary'
 import { useAuthContext } from '../../providers/Auth'
 
 interface Candidate {
@@ -67,8 +67,10 @@ const CreateExam: NextPage = () => {
   const startExam = useCallback(
     (mode) => {
       createExam(submittableVocabularyIds)
-        .then((examId) => createExamSession(examId, mode))
-        .then((examSessionId) => push(`${EXAM_PATH}/${examSessionId}`))
+        .then((examId) => createExamSession(examId))
+        .then((examSessionId) =>
+          push({ pathname: `${EXAM_PATH}/${examSessionId}`, query: { mode } })
+        )
         .catch((error) => {
           console.error(error)
         })

@@ -1,22 +1,27 @@
 import { Icon } from '@iconify/react'
-import { Box, LinearProgress, Stack, Typography } from '@mui/material'
+import { Box, Button, LinearProgress, Stack, Typography } from '@mui/material'
 import type { GetServerSideProps, NextPage } from 'next'
 import { useRouter } from 'next/router'
+import Link from '../../components/Link'
 import VocabularyExamCarousel from '../../components/VocabularyExamCarousel'
+import { EXAM_HISTORY_PATH } from '../../configs/path'
 import useExamSession from '../../hooks/useExamSession'
-import { ExamSessionMode } from '../../hooks/useMyVocabularies'
+import { ExamSessionMode } from '../../models/Vocabulary'
 import { useAuthContext } from '../../providers/Auth'
 
 const ExamSession: NextPage = () => {
-  const { query } = useRouter()
+  const {
+    query: { mode: modeQuery, examSessionId },
+  } = useRouter()
   const {
     state: { me },
   } = useAuthContext()
   const {
-    state: { vocabularies, progress, mode, owner },
+    state: { vocabularies, progress, owner },
     actions: { goToNext },
-  } = useExamSession(me!, query.examSessionId as string)
+  } = useExamSession(me!, examSessionId as string)
   const isCompleted = progress === vocabularies.length
+  const mode = Number(modeQuery) as ExamSessionMode
 
   return (
     <Stack>
@@ -44,6 +49,9 @@ const ExamSession: NextPage = () => {
         >
           <Icon icon="ant-design:file-done-outlined" />
           <Typography variant="h5">完成了</Typography>
+          <Button component={Link} href={EXAM_HISTORY_PATH}>
+            回測驗紀錄
+          </Button>
         </Stack>
       ) : (
         <VocabularyExamCarousel

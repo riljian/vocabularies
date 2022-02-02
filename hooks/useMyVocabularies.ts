@@ -7,9 +7,12 @@ import {
   getDoc,
   getDocs,
   getFirestore,
+  orderBy,
   query,
   QuerySnapshot,
   serverTimestamp,
+  Timestamp,
+  updateDoc,
   where,
 } from '@firebase/firestore'
 import axios from 'axios'
@@ -20,15 +23,12 @@ import { groupPartOfSpeech } from '../helpers'
 import {
   PartOfSpeech,
   VocabularyActionType,
+  VocabularyExamSession,
   VocabularyRecord,
   VocabularyRecordDuration,
   VocabularyRecordStatistics,
 } from '../models/Vocabulary'
 
-export enum ExamSessionMode {
-  Practice,
-  Exam,
-}
 interface Export {
   actions: {
     query: (
@@ -38,10 +38,9 @@ interface Export {
       duration: VocabularyRecordDuration
     ) => Promise<VocabularyRecordStatistics[]>
     createExam: (vocabularies: string[]) => Promise<string>
-    createExamSession: (
-      examId: string,
-      mode: ExamSessionMode
-    ) => Promise<string>
+    createExamSession: (examId: string) => Promise<string>
+    resetExamSession: (sessionId: string) => Promise<void>
+    getExamSessions: () => Promise<VocabularyExamSession[]>
   }
 }
 
@@ -107,6 +106,8 @@ const useMyVocabularies = (me: User | null): Export => {
         getRecords: reject,
         createExam: reject,
         createExamSession: reject,
+        resetExamSession: reject,
+        getExamSessions: reject,
       }
     }
     return {
@@ -151,6 +152,69 @@ const useMyVocabularies = (me: User | null): Export => {
         })
         return Array.from(aggregated.values())
       },
+      getExamSessions: async () => {
+        const db = getFirestore()
+        const sessionQuery = query(
+          collection(db, 'vocabularies-exam-sessions'),
+          where('owner', '==', me.uid),
+          where('createdAt', '>=', sub(new Date(), { months: 1 })),
+          orderBy('createdAt', 'desc')
+        )
+        const sessionDocs = await getDocs(sessionQuery)
+        const uniqueExams = new Set()
+        const uniqueVocabularies = new Set()
+        const sessions: Omit<VocabularyExamSession, 'failed'>[] = []
+        sessionDocs.forEach((sessionDoc) => {
+          const data = sessionDoc.data() as { createdAt: Timestamp } & Omit<
+            VocabularyExamSession,
+            'failed' | 'createdAt'
+          >
+          if (!uniqueExams.has(data.exam)) {
+            sessions.push({
+              ...data,
+              id: sessionDoc.id,
+              createdAt: data.createdAt.toDate(),
+            })
+            uniqueExams.add(data.exam)
+            data.vocabularies.forEach((v: string) => uniqueVocabularies.add(v))
+          }
+        })
+        if (sessions.length === 0) {
+          return []
+        }
+        const recordQuery = query(
+          collection(db, 'vocabularies-records'),
+          where(
+            'examSession',
+            'in',
+            sessions.map(({ id }) => id)
+          ),
+          where('type', '==', VocabularyActionType.Fail)
+        )
+        const recordDocs = await getDocs(recordQuery)
+        const recordSummary = new Map()
+        recordDocs.forEach((recordDoc) => {
+          const { examSession } = recordDoc.data()
+          const count = recordSummary.get(examSession)
+          recordSummary.set(examSession, count ? count + 1 : 1)
+        })
+        const vocabularyQuery = query(
+          collection(db, 'vocabularies-vocabularies'),
+          where(documentId(), 'in', Array.from(uniqueVocabularies.values()))
+        )
+        const vocabularyDocs = await getDocs(vocabularyQuery)
+        const vocabularySummary = new Map()
+        vocabularyDocs.forEach((vocabularyDoc) => {
+          const { value } = vocabularyDoc.data()
+          vocabularySummary.set(vocabularyDoc.id, value)
+        })
+        return sessions.map(({ id, vocabularies, ...restProps }) => ({
+          ...restProps,
+          id,
+          failed: recordSummary.get(id) || 0,
+          vocabularies: vocabularies.map((v) => vocabularySummary.get(v)),
+        }))
+      },
       createExam: async (vocabularies) => {
         const db = getFirestore()
         const doc = await addDoc(collection(db, 'vocabularies-exams'), {
@@ -159,7 +223,7 @@ const useMyVocabularies = (me: User | null): Export => {
         })
         return doc.id
       },
-      createExamSession: async (examId, examSessionMode) => {
+      createExamSession: async (examId) => {
         const db = getFirestore()
         const { vocabularies } = (
           await getDoc(firestoreDoc(db, `vocabularies-exams/${examId}`))
@@ -167,12 +231,23 @@ const useMyVocabularies = (me: User | null): Export => {
         const doc = await addDoc(collection(db, 'vocabularies-exam-sessions'), {
           exam: examId,
           vocabularies: shuffle(vocabularies),
-          mode: examSessionMode,
           owner: me.uid,
           progress: 0,
           createdAt: serverTimestamp(),
         })
         return doc.id
+      },
+      resetExamSession: async (sessionsId) => {
+        await updateDoc(
+          firestoreDoc(
+            getFirestore(),
+            `vocabularies-exam-sessions/${sessionsId}`
+          ),
+          {
+            progress: 0,
+            createdAt: serverTimestamp(),
+          }
+        )
       },
     }
   }, [me])
