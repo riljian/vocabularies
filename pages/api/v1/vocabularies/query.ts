@@ -20,7 +20,7 @@ const handler = async (
   res: NextApiResponse
 ) => {
   const {
-    query: { vocabulary },
+    query: { vocabulary: vocabularyQuery },
     method,
     userId,
   } = req
@@ -28,6 +28,7 @@ const handler = async (
     res.status(405).end()
     return
   }
+  const vocabulary = (vocabularyQuery as string).toLowerCase()
 
   const vocabularyQuerySnapshot = await db
     .collection('vocabularies-vocabularies')
